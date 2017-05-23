@@ -35,7 +35,7 @@ int main(int argv,char** args)
 
 	if(argv < 3)
 	{
-		printf("Usage : PSNR file1 file2\n");
+		printf("Usage : PSNR path-to-reference-image.yuv path-to-captured-image.yuv\n");
 		exit(0);
 	}
 
