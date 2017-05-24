@@ -16,6 +16,8 @@
 #define WIDTH 720
 #define HEIGHT 480
 
+#define FRAME_SIZE 691200 
+
 bool enable_masking = false;
 
 struct Rectangle
@@ -102,6 +104,17 @@ int main(int argv,char** args)
 	{
 		fMaskedRegion = fopen("Masked_Source_Region.yuv","w+");
 	}
+
+	fseek(fSource,0,SEEK_END);
+	byteCount = ftell(fSource);
+
+	if(byteCount != FRAME_SIZE)
+	{
+		printf("Image resloution error\n");
+		exit(0);
+	}
+
+	byteCount = 0;
 	
 	fSource = fopen(args[1],"r");
 	fNoisySource=fopen(args[2],"r");
