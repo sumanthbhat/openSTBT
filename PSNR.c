@@ -32,10 +32,10 @@ typedef struct Rectangle Rectangle;
 
 void initMask(Rectangle* FrameMask)
 {
-	FrameMask->top_left_corner_x = 59;
-	FrameMask->top_left_corner_y = 130;
-	FrameMask->bottom_right_corner_x = 89;
-	FrameMask->bottom_right_corner_y = 613;
+	FrameMask->top_left_corner_x = 58;
+	FrameMask->top_left_corner_y = 128;
+	FrameMask->bottom_right_corner_x = 90;
+	FrameMask->bottom_right_corner_y = 614;
 }
 
 void ParseArguments(int argv,char** args)
@@ -64,19 +64,21 @@ void ParseArguments(int argv,char** args)
 
 bool is_pixel_inside_masking_region(Rectangle FrameMask,int rowIndex, int columnIndex)
 {
-	if( columnIndex > FrameMask.top_left_corner_y)
+	if( columnIndex >= FrameMask.top_left_corner_y)
 	{
-		if(rowIndex > FrameMask.top_left_corner_x)
+		if(rowIndex >= FrameMask.top_left_corner_x)
 		{
 			if(columnIndex < FrameMask.bottom_right_corner_y)
 			{
-				if(rowIndex < FrameMask.bottom_right_corner_x)
+				if(rowIndex <= FrameMask.bottom_right_corner_x)
 				{
 					return true;
 				}
 			}
 		}
 	}
+
+	return false;
 }
 
 
@@ -88,13 +90,18 @@ int main(int argv,char** args)
 	long int PSNR=0;
 	float PSNR_db;
 	int Sum,Temp;
-	int rowIndex,columnIndex;
+	int rowIndex,columnIndex, maskedPixelCount=0;
 
 	Rectangle FrameMask;
 
 	initMask(&FrameMask);
 
 	ParseArguments(argv,args);
+
+	if(enable_masking)
+	{
+		fMaskedRegion = fopen("Masked_Source_Region.yuv","w+");
+	}
 	
 	fSource = fopen(args[1],"r");
 	fNoisySource=fopen(args[2],"r");
@@ -112,7 +119,27 @@ int main(int argv,char** args)
 			{
 				if(is_pixel_inside_masking_region(FrameMask,rowIndex,columnIndex))
 				{
-
+					fputc(fgetc(fSource),fMaskedRegion);
+					fputc(fgetc(fSource),fMaskedRegion);
+					fputc(fgetc(fSource),fMaskedRegion);
+					fputc(fgetc(fSource),fMaskedRegion);
+					// 4 bytes correspond to 2 pixels
+					maskedPixelCount += 4;
+					columnIndex++;
+					if(columnIndex == WIDTH)
+					{
+						columnIndex = 0;
+						rowIndex++;
+						if(rowIndex == HEIGHT)
+						{
+							break;
+						}
+					}
+					fgetc(fNoisySource)	;
+					fgetc(fNoisySource)	;
+					fgetc(fNoisySource)	;
+					fgetc(fNoisySource)	;
+					continue;
 				}
 			}
 			Temp = 0;
@@ -138,9 +165,12 @@ int main(int argv,char** args)
 	else
 		printf("\nPSNR = infinity\n");
 
-	printf("\nNumber of bytes read = %ld\n",byteCount);
+	printf("ByteCount = %ld\nmaskedPixelCount = %d\nTotal = %ld\n",byteCount,maskedPixelCount, byteCount + (long int)maskedPixelCount);
+
 	fclose(fSource);
 	fclose(fNoisySource);
+	if(enable_masking)
+		fclose(fMaskedRegion);
 	return 0;
 }
 
